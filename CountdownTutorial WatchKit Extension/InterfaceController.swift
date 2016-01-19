@@ -9,6 +9,7 @@
 import WatchKit
 import Foundation
 import WatchConnectivity
+import ClockKit
 
 class InterfaceController: WKInterfaceController, WCSessionDelegate {
     @IBOutlet var yearsLabel: WKInterfaceLabel!
@@ -34,6 +35,18 @@ class InterfaceController: WKInterfaceController, WCSessionDelegate {
         let defaults = NSUserDefaults.standardUserDefaults()
         defaults.setObject(displayDate, forKey: "dateKey")
     }
+    
+    func session(session: WCSession, didReceiveUserInfo userInfo: [String : AnyObject]) {
+        if let dateString = userInfo["dateKey"] as? String {
+            
+            // save new value to user defaults
+            let defaults = NSUserDefaults.standardUserDefaults()
+            defaults.setObject(dateString, forKey: "dateKey")
+            
+            // reload complication data
+            reloadComplications()
+        }
+    }
 
     override func awakeWithContext(context: AnyObject?) {
         super.awakeWithContext(context)
@@ -51,6 +64,17 @@ class InterfaceController: WKInterfaceController, WCSessionDelegate {
     override func didDeactivate() {
         // This method is called when watch view controller is no longer visible
         super.didDeactivate()
+    }
+    
+    func reloadComplications() {
+        let server = CLKComplicationServer.sharedInstance()
+        guard let complications = server.activeComplications where complications.count > 0 else {
+            return
+        }
+        
+        for complication in complications  {
+            server.reloadTimelineForComplication(complication)
+        }
     }
 
     func startCountDown(timer: NSTimer) {
