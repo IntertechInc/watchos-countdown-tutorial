@@ -93,8 +93,10 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
         
         let startDate = getStartDateFromUserDefaults()
         let sabbaticalDate = getSabbaticalDate(startDate)
-        let componentDay = userCalendar.components(.Day, fromDate: startDate, toDate: sabbaticalDate, options: [])
-        let days = componentDay.day
+        let componentDay = userCalendar.components(.Day, fromDate: date, toDate: sabbaticalDate, options: [])
+        let days = min(componentDay.day, 100)
+        
+        print("create \(days) timeline entries after \(date) until \(sabbaticalDate)")
         
         var entries = [CLKComplicationTimelineEntry]()
         
@@ -103,9 +105,13 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
             let dateComparisionResult:NSComparisonResult = NSDate().compare(sabbaticalDate)
             if dateComparisionResult == NSComparisonResult.OrderedAscending
             {
+                // entryDate is the date of the timeline entry for the complication
+                let entryDate = userCalendar.dateByAddingUnit([.Day], value: index, toDate: date, options: [])!
+                
                 let flags: NSCalendarUnit = [.Year, .Month, .Day]
-                let dateComponents = userCalendar.components(flags, fromDate: NSDate(), toDate: sabbaticalDate, options: [])
+                let dateComponents = userCalendar.components(flags, fromDate: entryDate, toDate: sabbaticalDate, options: [])
             
+                // Number of years, months, days from the timeline entry until sabbatical date
                 let year = dateComponents.year
                 let month = dateComponents.month
                 let day = dateComponents.day
@@ -113,26 +119,25 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
                 if (year > 0 )
                 {
                     let entryText = String(format: "%d Y | %d M", year, month)
-                    let entryDate = userCalendar.dateByAddingUnit([.Day], value: index, toDate: startDate, options: [])!
                     let entry = createComplicationEntry(entryText, date: entryDate, family: complication.family)
                     entries.append(entry)
                 }
                 else if (year <= 0 && month > 0)
                 {
                     let entryText = String(format: "%d M | &d D", month, day)
-                    let entryDate = userCalendar.dateByAddingUnit([.Day], value: index, toDate: startDate, options: [])!
                     let entry = createComplicationEntry(entryText, date: entryDate, family: complication.family)
                     entries.append(entry)
                 }
                 else if (year <= 0 && month <= 0 && day > 0)
                 {
                     let entryText = String(format: "%d Days", day)
-                    let entryDate = userCalendar.dateByAddingUnit([.Day], value: index, toDate: startDate, options: [])!
                     let entry = createComplicationEntry(entryText, date: entryDate, family: complication.family)
                     entries.append(entry)
                 }
             }
         }
+        
+        handler(entries)
     }
     
     // MARK: - Update Scheduling
