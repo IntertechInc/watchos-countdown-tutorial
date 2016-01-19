@@ -133,6 +133,8 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
                 }
             }
         }
+        
+        handler(entries)
     }
     
     // MARK: - Update Scheduling
